@@ -1,55 +1,94 @@
-import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useRef, useState } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
+import { FokusButton } from "../components/FokusButton";
+import { ActionButton } from "../components/FokusButton/ActionButton";
+import { Timer } from "../components/Timer";
+import { IconPause, IconPlay } from "../components/icons";
 
 const pomodoro = [
   {
     id: 'focus',
-    initialValue : 25,
-    image : require('./foco.png'),
-    display : 'Foco',
+    initialValue: 25 * 60,
+    image: require('./foco.png'),
+    display: 'Foco',
   },
   {
     id: 'short',
-    initialValue : 5,
-    image : require('./focomedio.png'),
-    display : 'Pausa Curta',
+    initialValue: 5 * 60,
+    image: require('./focomedio.png'),
+    display: 'Pausa Curta',
   },
   {
     id: 'long',
-    initialValue : 15,
-    image : require('./focolongo.png'),
-    display : 'Pausa Longa',
+    initialValue: 15 * 60,
+    image: require('./focolongo.png'),
+    display: 'Pausa Longa',
   }
 ]
 
 export default function Index() {
 
   const [timerType, setTimerType] = useState(pomodoro[0])
+  const [seconds, setSeconds] = useState(pomodoro[0].initialValue)
+  const [timerRunning, setTimerRunning] = useState(false)
+
+  const timerRef = useRef(null)
+
+  const clear = () => {
+    if (timerRef.current != null) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+      setTimerRunning(false)
+    }
+  }
+
+  const toggleTimerType = (newTimerType) => {
+    setTimerType(newTimerType)
+    setSeconds(newTimerType.initialValue)
+    clear()
+  }
+
+  const toggleTimer = () => {
+  if (timerRef.current) {
+    clear()
+    return
+  }
+
+  setTimerRunning(true)
+
+const id = setInterval(() => {
+  setSeconds(oldState => {
+    if (oldState === 0) {
+      clear();
+      return timerType.initialValue;
+    }
+    return oldState - 1;
+  })
+}, 1000);
+  
+  timerRef.current = id;
+};
 
   return (
     <View style={styles.container}>
       <Image source={timerType.image} />
       <View style={styles.actions}>
-        <View style={styles.context}> 
+        <View style={styles.context}>
           {pomodoro.map(p => (
-          <Pressable 
-          key={p.id}
-          style={ timerType.id === p.id ? styles.contextButtonTextActive : null}
-          onPress={() => setTimerType(p)}
-          >
-            <Text style={styles.contextButtonText}>
-              {p.display}
-            </Text>
-          </Pressable>
+            <ActionButton
+              key={p.id}
+              active={timerType.id === p.id}
+              onPress={() => toggleTimerType(p)}
+              display={p.display}
+            />
           ))}
         </View>
-        <Text style={styles.timer}>
-          {new Date(timerType.initialValue * 1000).toLocaleTimeString('pt-br', {minute : '2-digit', second : '2-digit' })}
-        </Text>
-        <Pressable style={styles.button}>
-          <Text style={styles.buttonText}>Começar
-          </Text>
-        </Pressable>
+        <Timer totalSeconds={seconds} />
+        <FokusButton
+          title={timerRunning ? 'Pausar' : 'Começar'}
+          icon={timerRunning ? <IconPause/> : <IconPlay/>}
+          onPress={toggleTimer}
+        />
       </View>
       <View style={styles.footer}>
         <Text style={styles.footerText}>
@@ -69,52 +108,25 @@ const styles = StyleSheet.create({
     gap: 40,
   },
   actions: {
-    padding: 24, 
-    backgroundColor : '#14448080',
+    padding: 24,
+    backgroundColor: '#14448080',
     width: '80%',
     borderRadius: 32,
     borderWidth: 2,
     borderColor: '#144480',
-    gap : 32
+    gap: 32
   },
-  timer: {
-    fontSize: 54,
-    color: '#fff',
-    fontWeight : 'bold',
-    textAlign : 'center'
+  footer: {
+    width: '80%'
   },
-  button : {
-    backgroundColor : '#B872FF',
-    borderRadius: 32,
-    padding : 8,
+  footerText: {
+    textAlign: 'center',
+    color: '#98a0a8',
+    fontSize: 12.5
   },
-  buttonText : {
-    textAlign : 'center',
-    color : '#021123',
-    fontSize : 18,
+  context: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center'
   },
-  footer : {
-    width : '80%'
-  }, 
-  footerText : {
-    textAlign : 'center',
-    color : '#98a0a8',
-    fontSize : 12.5
-  },
-  context : {
-    flexDirection : 'row',
-    justifyContent : 'space-around',
-    alignItems : 'center'
-  },
-  contextButtonText : {
-    fontSize : 12.5,
-    color : '#FFF',
-    padding : 8
-  },
-  contextButtonTextActive : {
-    backgroundColor : '#144480',
-    borderRadius : 8
-  }
-
-
 })
